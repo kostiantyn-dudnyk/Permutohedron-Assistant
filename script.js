@@ -204,6 +204,7 @@ const quizDB = [
   { q: "Скільки граней у тетраедра?", a: "4", opts: ["3","4","5","6"] },
   // додати ще 23...
 ];
+console.log("Кількість питань:", quizDB.length);
 
 function startQuiz() {
   const content = $('#content');
