@@ -548,39 +548,56 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 // Автоматичне проходження тесту з 1 помилкою
-window.autoQuiz = function() {
-  let mistakeIndex = Math.floor(Math.random() * quizDB.length); // випадкове питання з помилкою
-  let idx = 0;
+window.autoQuiz = async function () {
+    console.log("%cАвтоматичне проходження тесту почалось...", "color: lime");
 
-  function answerNext() {
-    if (idx >= quizDB.length) return; // завершили
+    const mistakeIndex = Math.floor(Math.random() * quizDB.length);
 
-    const q = quizDB[idx];
-    const correct = q.a;
+    for (let i = 0; i < quizDB.length; i++) {
 
-    // вибір варіанту відповіді
-    let selected;
-    if (idx === mistakeIndex) {
-      selected = q.opts.find(o => o !== correct); // навмисно неправильний
-    } else {
-      selected = correct; // правильний
+        // Чекаємо радіо кнопки
+        await waitFor(() => document.querySelectorAll('input[type="radio"]').length > 0);
+
+        const radios = [...document.querySelectorAll('input[type="radio"]')];
+
+        // Визначаємо правильну/неправильну відповідь
+        const q = quizDB[i];
+        const correct = q.a;
+
+        let selectedValue;
+        if (i === mistakeIndex) {
+            // вибираємо будь-яку неправильну
+            selectedValue = q.opts.find(o => o !== correct);
+        } else {
+            selectedValue = correct;
+        }
+
+        // Ставимо відмітку у потрібне радіо
+        const radioToClick = radios.find(r => r.value === selectedValue);
+        radioToClick.checked = true;
+        radioToClick.dispatchEvent(new Event("change", { bubbles: true }));
+
+        // Чекаємо кнопку Перевірити
+        await waitFor(() => document.querySelector("#check"));
+        document.querySelector("#check").click();
+
+        // Чекаємо появи кнопки "Далі"
+        await waitFor(() => document.querySelector("#next"));
+        document.querySelector("#next").click();
     }
 
-    // встановлюємо radio
-    const radio = document.querySelector(`input[name="q"]`);
-    if (radio) {
-      // вибрати конкретну кнопку
-      document.querySelectorAll(`input[name="q"]`).forEach(r => {
-        if (r.value === selected) r.checked = true;
-      });
+    console.log("%cГотово! Тест пройдено.", "color: cyan");
+};
 
-      // натиснути кнопку "Перевірити"
-      document.getElementById("check").click();
 
-      // рухаємося далі
-      setTimeout(answerNext, 100); // невелика затримка
-    }
-  }
-
-  answerNext();
+// універсальна функція очікування
+function waitFor(conditionFunc) {
+    return new Promise(resolve => {
+        const timer = setInterval(() => {
+            if (conditionFunc()) {
+                clearInterval(timer);
+                resolve();
+            }
+        }, 50);
+    });
 }
