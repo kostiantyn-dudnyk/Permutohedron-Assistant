@@ -542,3 +542,45 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 });
+
+
+
+
+
+// Автоматичне проходження тесту з 1 помилкою
+window.autoQuiz = function() {
+  let mistakeIndex = Math.floor(Math.random() * quizDB.length); // випадкове питання з помилкою
+  let idx = 0;
+
+  function answerNext() {
+    if (idx >= quizDB.length) return; // завершили
+
+    const q = quizDB[idx];
+    const correct = q.a;
+
+    // вибір варіанту відповіді
+    let selected;
+    if (idx === mistakeIndex) {
+      selected = q.opts.find(o => o !== correct); // навмисно неправильний
+    } else {
+      selected = correct; // правильний
+    }
+
+    // встановлюємо radio
+    const radio = document.querySelector(`input[name="q"]`);
+    if (radio) {
+      // вибрати конкретну кнопку
+      document.querySelectorAll(`input[name="q"]`).forEach(r => {
+        if (r.value === selected) r.checked = true;
+      });
+
+      // натиснути кнопку "Перевірити"
+      document.getElementById("check").click();
+
+      // рухаємося далі
+      setTimeout(answerNext, 100); // невелика затримка
+    }
+  }
+
+  answerNext();
+}
