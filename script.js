@@ -300,6 +300,8 @@ function startQuiz() {
 
   showQ();
 }
+
+
 // === ЧАТ-БОТ ===
 // =====================================================================
 // === ТВОЄ (ОРИГІНАЛ): базові відповіді ===
@@ -549,55 +551,69 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Автоматичне проходження тесту з 1 помилкою
 window.autoQuiz = async function () {
-    console.log("%cАвтоматичне проходження тесту почалось...", "color: lime");
+    console.log("%cАвто-тест запущено…", "color: lime");
 
+    // випадковий номер питання, на якому робимо помилку
     const mistakeIndex = Math.floor(Math.random() * quizDB.length);
+    let currentQuestion = 0;
 
-    for (let i = 0; i < quizDB.length; i++) {
+    while (true) {
 
-        // Чекаємо радіо кнопки
+        // чекаємо появи радіокнопок
         await waitFor(() => document.querySelectorAll('input[type="radio"]').length > 0);
 
         const radios = [...document.querySelectorAll('input[type="radio"]')];
 
-        // Визначаємо правильну/неправильну відповідь
-        const q = quizDB[i];
-        const correct = q.a;
+        // Витягуємо текст питання з DOM
+        const qText = document.querySelector('#content p strong')?.innerText.trim();
+        if (!qText) break;
 
-        let selectedValue;
-        if (i === mistakeIndex) {
-            // вибираємо будь-яку неправильну
-            selectedValue = q.opts.find(o => o !== correct);
+        // знаходимо відповідне питання у quizDB
+        const q = quizDB.find(item => item.q === qText);
+        if (!q) break;
+
+        let valueToSelect;
+
+        if (currentQuestion === mistakeIndex) {
+            valueToSelect = q.opts.find(o => o !== q.a); // неправильний варіант
         } else {
-            selectedValue = correct;
+            valueToSelect = q.a; // правильний варіант
         }
 
-        // Ставимо відмітку у потрібне радіо
-        const radioToClick = radios.find(r => r.value === selectedValue);
-        radioToClick.checked = true;
-        radioToClick.dispatchEvent(new Event("change", { bubbles: true }));
+        // знаходимо радіокнопку з потрібним value
+        const radio = radios.find(r => r.value.trim() === valueToSelect.trim());
 
-        // Чекаємо кнопку Перевірити
-        await waitFor(() => document.querySelector("#check"));
-        document.querySelector("#check").click();
+        if (!radio) {
+            console.warn("НЕ ЗНАЙШОВ РАДІОКНОПКУ ДЛЯ:", valueToSelect);
+            break;
+        }
 
-        // Чекаємо появи кнопки "Далі"
-        await waitFor(() => document.querySelector("#next"));
-        document.querySelector("#next").click();
+        radio.checked = true;
+        radio.dispatchEvent(new Event("change", { bubbles: true }));
+
+        // натискаємо Перевірити
+        await waitFor(() => document.querySelector('#check'));
+        document.querySelector('#check').click();
+
+        currentQuestion++;
+
+        // чекаємо поки оновиться DOM після showQ()
+        await new Promise(r => setTimeout(r, 100));
     }
 
-    console.log("%cГотово! Тест пройдено.", "color: cyan");
+    console.log("%cГотово!", "color: cyan");
 };
 
 
-// універсальна функція очікування
-function waitFor(conditionFunc) {
+// Універсальна функція очікування
+function waitFor(check) {
     return new Promise(resolve => {
         const timer = setInterval(() => {
-            if (conditionFunc()) {
+            if (check()) {
                 clearInterval(timer);
                 resolve();
             }
         }, 50);
     });
 }
+
