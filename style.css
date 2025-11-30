@@ -46,7 +46,7 @@ button { font-family: inherit; font-size: 1rem; }
 
 .bot-msg {
   white-space: pre-wrap;
-  border-left: 3px solid #5b8cff;
+  border-left: 3px solid #1b375d;
   padding-left: 6px;
   margin: 4px 0;
   opacity: 0;
