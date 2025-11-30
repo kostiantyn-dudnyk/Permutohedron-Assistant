@@ -1,5 +1,5 @@
 :root {
-  --primary: #1b375d;
+  --primary: #3b82f6;
   --bg: #ffffff;
   --text: #1f2937;
   --light: #f9fafb;
@@ -46,7 +46,7 @@ button { font-family: inherit; font-size: 1rem; }
 
 .bot-msg {
   white-space: pre-wrap;
-  border-left: 3px solid #1b375d;
+  border-left: 3px solid #3b82f6;
   padding-left: 6px;
   margin: 4px 0;
   opacity: 0;
