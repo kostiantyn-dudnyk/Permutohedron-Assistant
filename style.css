@@ -25,3 +25,35 @@ button { font-family: inherit; font-size: 1rem; }
   #scene { height: 55vh; }
   .nav { flex-wrap: wrap; }
 }
+
+/* === МОЄ (НОВЕ) — анімація машинопису + стиль друку === */
+
+.typing-indicator {
+  display: inline-block;
+  padding: 4px 8px;
+  background: #efefef;
+  border-radius: 10px;
+  font-size: 12px;
+  color: #333;
+  animation: blink 1s infinite;
+}
+
+@keyframes blink {
+  0% { opacity: .3; }
+  50% { opacity: 1; }
+  100% { opacity: .3; }
+}
+
+.bot-msg {
+  white-space: pre-wrap;
+  border-left: 3px solid #5b8cff;
+  padding-left: 6px;
+  margin: 4px 0;
+  opacity: 0;
+  animation: fadeIn 0.3s forwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
