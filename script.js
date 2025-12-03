@@ -499,44 +499,112 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 
-// === АВТОПРОХОДЖЕННЯ ТЕСТУ ===
-const DELAY = 300;
+// Надійний автопрохід з точною однією помилкою
+const DELAY = 250;
+const wrongIndex = 2; // 0 = перше питання, 2 = третє і т.д.
 
-// На якому питанні робити помилку (0 = перше)
-const wrongIndex = 2; // наприклад третє питання буде неправильним
+function getVisibleTextForInput(inp) {
+  // шукаємо текст у label або поряд зі input
+  let lab = inp.closest('label');
+  if (lab) return lab.textContent.trim();
+  // інший варіант: input може бути всередині <label> або мати sibling textNode
+  if (inp.nextSibling && inp.nextSibling.nodeType === Node.TEXT_NODE) {
+    return inp.nextSibling.textContent.trim();
+  }
+  // ще спробуємо батьківський елемент
+  if (inp.parentElement) return inp.parentElement.textContent.trim();
+  return inp.value || '';
+}
 
-function autoRunQuiz() {
-  let interval = setInterval(() => {
-    const qLabel = document.querySelectorAll('input[name="q"]');
-    if (!qLabel.length) return;
+function clickElement(el) {
+  // клік фізично — спрацює для input і label
+  try { el.click(); } catch(e){}
+  // додатково емуляція подій
+  try {
+    el.dispatchEvent(new MouseEvent('mousedown', {bubbles:true}));
+    el.dispatchEvent(new MouseEvent('mouseup', {bubbles:true}));
+    el.dispatchEvent(new MouseEvent('click', {bubbles:true}));
+  } catch(e){}
+}
 
-    const currentQ = document.querySelector("strong").textContent.trim();
-    const currentIndex = parseInt(
-      document.querySelector("em").textContent.replace(/[^\d]/g,'')
-    ) - 1;
+function autoRunQuizRobust() {
+  const interval = setInterval(() => {
+    const options = Array.from(document.querySelectorAll('input[name="q"]'));
+    if (!options.length) return;
 
-    const obj = quizDB.find(x => x.q === currentQ);
-    if (!obj) return;
+    const qStrong = document.querySelector("strong");
+    const em = document.querySelector("em");
+    if (!qStrong || !em) return;
 
-    const correctOption = [...qLabel].find(r => r.value === obj.a);
-    let toSelect;
+    const qText = qStrong.textContent.trim();
+    const currentIndex = parseInt(em.textContent.replace(/[^\d]/g,''), 10) - 1;
 
-    // ❗ Якщо номер питання = wrongIndex → вибираємо неправильну
-    if (currentIndex === wrongIndex) {
-      toSelect = [...qLabel].find(r => r.value !== obj.a);
-    } else {
-      toSelect = correctOption;
+    const qObj = (typeof quizDB !== 'undefined') ? quizDB.find(x => x.q === qText) : null;
+    if (!qObj) {
+      console.warn('Не знайшов питання в quizDB для тексту:', qText);
+      return;
     }
 
-    toSelect.click();
+    // знаходимо опцію, яка МАЄ відображений текст == правильна відповідь
+    let correctInput = options.find(inp => {
+      const vis = getVisibleTextForInput(inp);
+      return vis === qObj.a || inp.value === qObj.a;
+    });
 
+    // якщо не знайшли по точній збігу — пробуємо часткове порівняння (trim)
+    if (!correctInput) {
+      correctInput = options.find(inp => {
+        const vis = getVisibleTextForInput(inp);
+        return vis.includes(qObj.a) || (inp.value && inp.value.includes(qObj.a));
+      });
+    }
+
+    // якщо і це не спрацювало — візьмемо перший input як fallback
+    if (!correctInput) {
+      console.warn('Не вдалось знайти точну правильну опцію; використаємо першу як fallback.');
+      correctInput = options[0];
+    }
+
+    // Вибрати неправильну опцію для wrongIndex
+    let toClick;
+    if (currentIndex === wrongIndex) {
+      toClick = options.find(inp => {
+        const vis = getVisibleTextForInput(inp);
+        return vis !== getVisibleTextForInput(correctInput) && (inp !== correctInput);
+      });
+      // якщо всі опції мають однаковий текст (дуже рідко) — вибираємо наступну по порядку
+      if (!toClick) {
+        const idx = options.indexOf(correctInput);
+        toClick = options[(idx + 1) % options.length];
+      }
+    } else {
+      toClick = correctInput;
+    }
+
+    console.log(`Питання #${currentIndex + 1}: "${qText}"`);
+    console.log('Правильний (знайдений):', getVisibleTextForInput(correctInput));
+    console.log('Вибираємо (toClick):', getVisibleTextForInput(toClick));
+
+    // кликаємо: label якщо є, і сам input
+    const lab = toClick.closest('label');
+    if (lab) clickElement(lab);
+    clickElement(toClick);
+
+    // натискаємо кнопку "Перевірити" через трохи
     setTimeout(() => {
-      const checkBtn = document.getElementById("check");
-      if (checkBtn) checkBtn.click();
-      else clearInterval(interval);
+      const btn = document.getElementById('check') || document.querySelector('button[id^="check"]') || document.querySelector('button.btn');
+      if (btn) {
+        clickElement(btn);
+      } else {
+        console.warn('Кнопку "Перевірити" не знайдено — зупиняю інтервал.');
+        clearInterval(interval);
+      }
     }, DELAY);
 
+    // якщо це останнє питання — можна зупинити інтервал після паузи
+    // (необов'язково — інтервал зупиняється сам, коли елементів не буде)
   }, DELAY * 2);
 }
 
-autoRunQuiz();
+autoRunQuizRobust();
+
