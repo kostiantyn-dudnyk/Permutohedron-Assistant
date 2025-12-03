@@ -497,3 +497,56 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 });
+
+
+// === АВТОПРОХОДЖЕННЯ ТЕСТУ ===
+// Час затримок (для реалістичності)
+const DELAY = 300;
+
+// Один індекс питання зробимо неправильним
+const wrongIndex = 3; // наприклад 4-е питання
+
+function autoRunQuiz() {
+  let interval = setInterval(() => {
+    const qLabel = document.querySelectorAll('input[name="q"]');
+    if (!qLabel.length) return; // питання ще не з'явилось
+
+    // Знайдемо правильну відповідь
+    const correctText = Array.from(qLabel).find(r => {
+      const opt = r.value;
+      const currentQ = document.querySelector("strong").textContent.trim();
+      const obj = quizDB.find(x => x.q === currentQ);
+      return obj && opt === obj.a;
+    });
+
+    // Якщо це те питання, яке має бути неправильним
+    let toSelect;
+    const currentIndex = parseInt(
+      document.querySelector("em").textContent.replace(/[^\d]/g,'')
+    ) - 1;
+
+    if (currentIndex === wrongIndex) {
+      // беремо ПЕРШУ неправильну
+      toSelect = Array.from(qLabel).find(r => r.value !== correctText.value);
+    } else {
+      // вибираємо правильну
+      toSelect = correctText;
+    }
+
+    // Клікаємо відповідь
+    toSelect.click();
+
+    // Клікаємо кнопку "Перевірити"
+    setTimeout(() => {
+      const checkBtn = document.getElementById("check");
+      if (checkBtn) checkBtn.click();
+      else clearInterval(interval);
+    }, DELAY);
+
+  }, DELAY * 2);
+}
+
+// Запустити автоматом після завантаження тесту
+setTimeout(() => {
+  autoRunQuiz();
+}, 500);
