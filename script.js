@@ -500,43 +500,36 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 // === АВТОПРОХОДЖЕННЯ ТЕСТУ ===
-// Час затримок (для реалістичності)
 const DELAY = 300;
 
-// Один індекс питання зробимо неправильним
-const wrongIndex = 3; // наприклад 4-е питання
+// На якому питанні робити помилку (0 = перше)
+const wrongIndex = 2; // наприклад третє питання буде неправильним
 
 function autoRunQuiz() {
   let interval = setInterval(() => {
     const qLabel = document.querySelectorAll('input[name="q"]');
-    if (!qLabel.length) return; // питання ще не з'явилось
+    if (!qLabel.length) return;
 
-    // Знайдемо правильну відповідь
-    const correctText = Array.from(qLabel).find(r => {
-      const opt = r.value;
-      const currentQ = document.querySelector("strong").textContent.trim();
-      const obj = quizDB.find(x => x.q === currentQ);
-      return obj && opt === obj.a;
-    });
-
-    // Якщо це те питання, яке має бути неправильним
-    let toSelect;
+    const currentQ = document.querySelector("strong").textContent.trim();
     const currentIndex = parseInt(
       document.querySelector("em").textContent.replace(/[^\d]/g,'')
     ) - 1;
 
+    const obj = quizDB.find(x => x.q === currentQ);
+    if (!obj) return;
+
+    const correctOption = [...qLabel].find(r => r.value === obj.a);
+    let toSelect;
+
+    // ❗ Якщо номер питання = wrongIndex → вибираємо неправильну
     if (currentIndex === wrongIndex) {
-      // беремо ПЕРШУ неправильну
-      toSelect = Array.from(qLabel).find(r => r.value !== correctText.value);
+      toSelect = [...qLabel].find(r => r.value !== obj.a);
     } else {
-      // вибираємо правильну
-      toSelect = correctText;
+      toSelect = correctOption;
     }
 
-    // Клікаємо відповідь
     toSelect.click();
 
-    // Клікаємо кнопку "Перевірити"
     setTimeout(() => {
       const checkBtn = document.getElementById("check");
       if (checkBtn) checkBtn.click();
@@ -546,7 +539,4 @@ function autoRunQuiz() {
   }, DELAY * 2);
 }
 
-// Запустити автоматом після завантаження тесту
-setTimeout(() => {
-  autoRunQuiz();
-}, 500);
+autoRunQuiz();
