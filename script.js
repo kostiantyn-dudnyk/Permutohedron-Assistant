@@ -257,7 +257,10 @@ function startQuiz() {
     const q = questions[qIdx];
 
     const opts = q.opts.map(o => `
-      <label><input type="radio" name="q" value="${o}"> ${o}</label><br>
+      <label class="opt">
+        <input type="radio" name="q" value="${o}">
+        ${o}
+      </label><br>
     `).join('');
 
     content.innerHTML = `
@@ -265,25 +268,41 @@ function startQuiz() {
       <p><strong>${q.q}</strong></p>
       ${opts}
       <button class="btn" id="check">Перевірити</button>
+      <div id="reaction" style="font-size:32px; margin-top:10px;"></div>
     `;
 
-    $('#check').onclick = () => {
+    const checkBtn = $('#check');
+
+    checkBtn.onclick = () => {
       const sel = $('input[name="q"]:checked');
       if (!sel) return alert('Оберіть варіант');
 
+      const reaction = $('#reaction');
+
+      // БЛОКУЄМО вибір після відповіді
+      document.querySelectorAll('input[name="q"]').forEach(i => i.disabled = true);
+
       if (sel.value === q.a) {
         score++;
+        reaction.innerHTML = `<span style="color:green;">✔️ Правильно!</span>`;
       } else {
         wrongAnswers.push({
           q: q.q,
           user: sel.value,
           correct: q.a
         });
+        reaction.innerHTML = `<span style="color:red;">✖️ Неправильно!</span>`;
       }
 
-      qIdx++;
-      showQ();
+      // Міняємо кнопку на "Далі"
+      checkBtn.textContent = "Далі";
+
+      checkBtn.onclick = () => {
+        qIdx++;
+        showQ();
+      };
     };
+
   }
 
   showQ();
