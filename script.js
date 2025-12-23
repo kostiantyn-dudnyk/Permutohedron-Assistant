@@ -257,10 +257,7 @@ function startQuiz() {
     const q = questions[qIdx];
 
     const opts = q.opts.map(o => `
-      <label class="opt">
-        <input type="radio" name="q" value="${o}">
-        ${o}
-      </label><br>
+      <label><input type="radio" name="q" value="${o}"> ${o}</label><br>
     `).join('');
 
     content.innerHTML = `
@@ -268,41 +265,25 @@ function startQuiz() {
       <p><strong>${q.q}</strong></p>
       ${opts}
       <button class="btn" id="check">Перевірити</button>
-      <div id="reaction" style="font-size:32px; margin-top:10px;"></div>
     `;
 
-    const checkBtn = $('#check');
-
-    checkBtn.onclick = () => {
+    $('#check').onclick = () => {
       const sel = $('input[name="q"]:checked');
       if (!sel) return alert('Оберіть варіант');
 
-      const reaction = $('#reaction');
-
-      // БЛОКУЄМО вибір після відповіді
-      document.querySelectorAll('input[name="q"]').forEach(i => i.disabled = true);
-
       if (sel.value === q.a) {
         score++;
-        reaction.innerHTML = `<span style="color:green;">✔️ Правильно!</span>`;
       } else {
         wrongAnswers.push({
           q: q.q,
           user: sel.value,
           correct: q.a
         });
-        reaction.innerHTML = `<span style="color:red;">✖️ Неправильно!</span>`;
       }
 
-      // Міняємо кнопку на "Далі"
-      checkBtn.textContent = "Далі";
-
-      checkBtn.onclick = () => {
-        qIdx++;
-        showQ();
-      };
+      qIdx++;
+      showQ();
     };
-
   }
 
   showQ();
@@ -310,71 +291,48 @@ function startQuiz() {
 
 
 // === ЧАТ-БОТ ===
-const botResponses = {
-  "скільки вершин": "24 — тому що 4! = 24 перестановки.",
-  "що таке ребро": "Ребро з'єднує дві перестановки, які відрізняються транспозицією сусідніх елементів.",
-  "скільки граней": "14: 8 трикутних і 6 чотирикутних.",
-  "центр": "Центр — точка (2.5, 2.5, 2.5).",
-};
-
+// === ЧАТ-БОТ: ПЕРМУТАЕДР (n=4) ===
 const baseKnowledge = [
   {
-    keys: ["скільки", "вершин", "вершина"],
-    answerShort: "24 — це кількість перестановок 4 елементів.",
-    answerLong:
-`Фігура має 24 вершини, тому що ця кількість відповідає числу всіх можливих перестановок чотирьох елементів. У математиці це записується як 4! (4 факторіал), що дорівнює 24. Іншими словами, кожна вершина відповідає певному порядку елементів, а всі можливі порядки утворюють 24 унікальні комбінації.`
+    keys: ["привіт", "вітаю", "хто ти", "що ти вмієш"],
+    answerLong: "Привіт! Я гід по світу геометрії. Зокрема, я знаю все про Пермутаедр порядку 4 — це фігура, що представляє всі перестановки чисел {1, 2, 3, 4} у 3D просторі. Запитуй про вершини, грані або координати!"
   },
-
   {
-    keys: ["що", "таке", "ребро"],
-    answerShort: "Ребро — це зв’язок між двома перестановками.",
-    answerLong:
-`Ребро в цій фігурі з'єднує дві вершини, які відповідають перестановкам, що відрізняються лише однією операцією — транспозицією сусідніх елементів. Це означає, що між такими вершинами існує мінімальна зміна, тому вони вважаються безпосередньо пов'язаними.`
+    keys: ["кількість", "скільки", "вершин", "вершина"],
+    answerLong: "Фігура має 24 вершини. Це число відповідає 4! (4 факторіал), тобто всім можливим способам впорядкувати числа 1, 2, 3 та 4. Кожна точка — це одна унікальна перестановка."
   },
-
   {
-    keys: ["скільки", "граней"],
-    answerShort: "Фігура має 14 граней.",
-    answerLong:
-`Загалом структура містить 14 граней: 8 трикутних і 6 чотирикутних. Така комбінація виникає природно з того, як вершини та ребра поєднують між собою різні перестановки. Грані утворюють замкнені області між ребрами, створюючи впорядковану комбінацію простих багатокутників.`
+    keys: ["що", "таке", "ребро", "ребра", "зв'язок"],
+    answerLong: "Ребро з'єднує дві вершини, які відрізняються лише однією 'сусідньою транспозицією' (наприклад, 1234 та 2134). Усього у фігурі 36 таких ребер."
   },
-
   {
-    keys: ["центр"],
-    answerShort: "Центр — координата (2.5, 2.5, 2.5).",
-    answerLong:
-`Центр фігури можна описати точкою (2.5, 2.5, 2.5). Це середина між усіма координатами вершин у просторі. Таке значення виходить із рівномірного розподілу точок, що формують фігуру.`
+    keys: ["скільки", "граней", "грані", "яка форма"],
+    answerLong: "Цей багатогранник має 14 граней: 6 квадратів (або чотирикутників) та 8 правильних шестикутників. Зверніть увагу: у вашій попередній версії згадувалися трикутники, але класичний пермутаедр складається саме з 6 квадратів та 8 шестикутників."
+  },
+  {
+    keys: ["центр", "координати центру", "середина"],
+    answerLong: "Центр фігури знаходиться в точці (2.5, 2.5, 2.5, 2.5) у 4D просторі, або (2.5, 2.5, 2.5) при проекції. Це середнє арифметичне всіх координат перестановок."
+  },
+  {
+    keys: ["координати", "точки", "числа"],
+    answerLong: "Кожна вершина має координати, що є перестановкою чисел (1, 2, 3, 4). Наприклад: (1, 2, 3, 4), (4, 3, 2, 1) і так далі. Сума координат кожної вершини завжди дорівнює 10."
+  },
+  {
+    keys: ["назва", "фігура", "що це"],
+    answerLong: "Ця геометрична фігура називається Пермутаедр (Permutahedron). Вона є частиною сімейства напівправильних багатогранників і візуалізує структуру перестановок."
   }
 ];
 
-let customDB = JSON.parse(localStorage.getItem("custom_db") || "{}");
 
-function saveAnswer(question, answer) {
-  customDB[question] = answer;
-  localStorage.setItem("custom_db", JSON.stringify(customDB));
-}
-
-function getCustomAnswer(q) {
-  return customDB[q] || null;
-}
 
 function findSmartAnswer(text) {
   text = text.toLowerCase();
-
-  const saved = getCustomAnswer(text);
-  if (saved) return saved;
-
-  const words = text.split(" ");
   let best = { score: 0, item: null };
 
   for (const item of baseKnowledge) {
     let score = 0;
-
     for (const key of item.keys) {
-      if (text.includes(key)) score += 3;
-      for (const w of words) {
-        if (w.startsWith(key)) score += 1;
-      }
+      if (text.includes(key)) score += 5; // Пряме входження ключа
     }
 
     if (score > best.score) {
@@ -383,29 +341,12 @@ function findSmartAnswer(text) {
     }
   }
 
-  if (best.score > 2) return best.item;
-
-  return null;
-}
-
-function handleTeachCommand(txt) {
-  if (!txt.startsWith("/teach")) return null;
-
-  const parts = txt.replace("/teach", "").split("=");
-  if (parts.length < 2) return "Формат: /teach питання = відповідь";
-
-  const q = parts[0].trim().toLowerCase();
-  const a = parts[1].trim();
-
-  saveAnswer(q, a);
-
-  return "Навчено! Тепер я це знаю 😊";
+  return best.score >= 5 ? best.item : null;
 }
 
 async function typeWriterEffect(text, element) {
   element.innerHTML = ""; 
   let i = 0;
-
   return new Promise(resolve => {
     const interval = setInterval(() => {
       element.innerHTML += text[i];
@@ -414,14 +355,16 @@ async function typeWriterEffect(text, element) {
         clearInterval(interval);
         resolve();
       }
-    }, 20); 
+    }, 15); 
   });
 }
 
 function showTypingIndicator(box) {
   const div = document.createElement("div");
   div.id = "typing";
-  div.innerHTML = `<span class="typing-indicator">Бот друкує…</span>`;
+  div.style.fontStyle = "italic";
+  div.style.color = "#888";
+  div.innerHTML = `Бот друкує…`;
   box.appendChild(div);
   box.scrollTop = box.scrollHeight;
 }
@@ -432,64 +375,63 @@ function hideTypingIndicator() {
 }
 
 function initChat() {
-  const content = $('#content');
+  const content = document.getElementById('content');
   content.innerHTML = `
-    <div id="chatbox" style="height:300px; overflow-y:auto; border:1px solid #ccc; padding:0.5rem; margin-bottom:0.5rem;"></div>
-    <input id="msg" placeholder="Запитайте..." style="width:100%; padding:0.5rem;">
-    <button class="btn" id="send">Надіслати</button>
+    <div id="chatbox" style="height:350px; overflow-y:auto; border:1px solid #ddd; padding:1rem; border-radius:8px; background:#f9f9f9; margin-bottom:1rem;"></div>
+    <div style="display:flex; gap:5px;">
+        <input id="msg" placeholder="Запитайте про кількість вершин, граней або назву..." style="flex-grow:1; padding:0.7rem; border-radius:5px; border:1px solid #ccc;">
+        <button class="btn" id="send" style="padding:0.7rem 1.5rem; cursor:pointer;">Надіслати</button>
+    </div>
   `;
 
-  const box = $('#chatbox');
-  const input = $('#msg');
+  const box = document.getElementById('chatbox');
+  const input = document.getElementById('msg');
 
-  $('#send').onclick = async () => {
-    const txt = input.value.trim().toLowerCase();
+  const processMessage = async () => {
+    const txt = input.value.trim();
     if (!txt) return;
 
     addMsg(txt, 'user');
-
-    const teach = handleTeachCommand(txt);
-    if (teach) {
-      showTypingIndicator(box);
-      setTimeout(() => {
-        hideTypingIndicator();
-        addMsg(teach, 'bot');
-      }, 600);
-      input.value = '';
-      return;
-    }
-
-    const result = findSmartAnswer(txt);
     input.value = '';
 
+    const result = findSmartAnswer(txt);
     showTypingIndicator(box);
 
     setTimeout(async () => {
       hideTypingIndicator();
-
       if (result === null) {
-        addMsg("Я ще не знаю цієї відповіді 😅<br>Навчи мене: /teach питання = відповідь", "bot");
-        return;
+        addMsg("Цікаве питання! На жаль, я спеціалізуюся лише на геометрії пермутаедра. Спробуйте запитати про вершини або грані.", "bot");
+      } else {
+        const msgDiv = document.createElement("div");
+        msgDiv.className = "bot-msg";
+        msgDiv.style.background = "#eef4ff";
+        msgDiv.style.padding = "8px";
+        msgDiv.style.borderRadius = "5px";
+        msgDiv.style.margin = "5px 0";
+        box.appendChild(msgDiv);
+        await typeWriterEffect(result.answerLong, msgDiv);
       }
-
-      const msg = createEl("div", { class: "bot-msg" });
-      box.appendChild(msg);
-
-      await typeWriterEffect(result.answerLong, msg);
-
       box.scrollTop = box.scrollHeight;
-
-    }, 800);
+    }, 600);
   };
 
+  document.getElementById('send').onclick = processMessage;
+  input.onkeypress = (e) => { if(e.key === 'Enter') processMessage(); };
+
   function addMsg(text, sender) {
-    const div = createEl('div', {
-      style: `margin:0.3rem 0; text-align:${sender==='user'?'right':'left'}`
-    });
-
-    if (sender === 'bot') div.classList.add('bot-msg');
-
-    div.innerHTML = text;
+    const div = document.createElement('div');
+    div.style.margin = "0.5rem 0";
+    div.style.textAlign = sender === 'user' ? 'right' : 'left';
+    
+    const span = document.createElement('span');
+    span.style.display = "inline-block";
+    span.style.padding = "8px 12px";
+    span.style.borderRadius = "10px";
+    span.style.background = sender === 'user' ? '#007bff' : '#eee';
+    span.style.color = sender === 'user' ? '#fff' : '#333';
+    span.innerHTML = text;
+    
+    div.appendChild(span);
     box.appendChild(div);
     box.scrollTop = box.scrollHeight;
   }
